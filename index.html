@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>PIA Cash Flow Analysis – Interactive</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root {
+    --bg:#f5f6fa; --card:#ffffff; --ink:#1f2430; --muted:#6b7280;
+    --accent:#2b6cb0; --accent-dark:#1e4e8c; --green:#137a4a; --red:#b42318;
+    --border:#e5e7eb; --hilite:#fff8dc;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         background:var(--bg); color:var(--ink); }
+  header { background:var(--accent); color:#fff; padding:14px 20px; }
+  header h1 { margin:0; font-size:18px; font-weight:600; }
+  header p { margin:2px 0 0; font-size:12px; opacity:.85; }
+  main { display:grid; grid-template-columns: 360px 1fr; gap:16px; padding:16px; align-items:start; }
+  @media (max-width: 1100px) { main { grid-template-columns: 1fr; } }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:14px; }
+  .card h2 { font-size:13px; margin:0 0 10px; color:var(--accent-dark); text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid var(--border); padding-bottom:6px; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:4px 0; }
+  .row label { color:var(--ink); font-size:13px; flex:1; }
+  .row .unit { color:var(--muted); font-size:11px; margin-left:4px; }
+  input[type="number"], select {
+    width:110px; padding:4px 6px; border:1px solid var(--border); border-radius:4px;
+    background:var(--hilite); font:13px inherit; text-align:right;
+  }
+  input[type="number"]:focus, select:focus { outline:2px solid var(--accent); background:#fffbe6; }
+  select { text-align:left; background:#fff; }
+  .out { font-variant-numeric: tabular-nums; text-align:right; font-weight:500; }
+  .out.neg { color:var(--red); }
+  .out.pos { color:var(--green); }
+  .subrow { padding-left:12px; font-size:12px; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; font-size:12px; font-variant-numeric: tabular-nums; }
+  th, td { padding:5px 8px; text-align:right; border-bottom:1px solid var(--border); }
+  th:first-child, td:first-child { text-align:left; }
+  th { background:#f0f2f7; color:var(--ink); font-weight:600; position:sticky; top:0; }
+  tr.hi td { background:#f8fafc; font-weight:600; }
+  .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+  @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } }
+  .big { font-size:22px; font-weight:700; color:var(--accent-dark); }
+  .kbd { font: 11px "SF Mono", Menlo, monospace; color:var(--muted); }
+  details { margin-top:6px; }
+  details summary { cursor:pointer; color:var(--accent); font-size:12px; }
+  .legend { font-size:11px; color:var(--muted); margin-top:4px; }
+  .legend .sq { display:inline-block; width:10px; height:10px; background:var(--hilite); border:1px solid #d4b100; margin-right:4px; vertical-align:middle;}
+  .btn { background:var(--accent); color:#fff; border:0; border-radius:4px; padding:5px 10px; font:12px inherit; cursor:pointer; }
+  .btn:hover { background:var(--accent-dark); }
+  .btn-x { background:#fff; color:var(--red); border:1px solid var(--border); border-radius:4px; padding:2px 7px; font:12px inherit; cursor:pointer; }
+  .btn-x:hover { background:#fef2f2; }
+  #ph_table td, #ph_table th { padding:4px 4px; }
+  #ph_table input[type="text"] { width:100%; padding:4px 6px; border:1px solid var(--border); border-radius:4px; background:var(--hilite); font:13px inherit; }
+  #ph_table input[type="number"] { width:90px; }
+  #ph_table select { width:auto; }
+  #owners_table td, #owners_table th { padding:4px 4px; }
+  #owners_table input[type="text"] { width:100%; padding:4px 6px; border:1px solid var(--border); border-radius:4px; background:var(--hilite); font:13px inherit; }
+  #owners_table input[type="number"] { width:80px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Property Investment Cash Flow – Interactive Model</h1>
+  <p>Yellow-highlighted fields are your inputs. Everything else recalculates as you type.</p>
+</header>
+
+<main>
+  <!-- ============ INPUTS ============ -->
+  <section id="inputs">
+
+    <div class="card">
+      <h2>Investment Cost</h2>
+      <div class="subrow">Property purchase price</div>
+      <div class="row"><label>&nbsp;&nbsp;Land price</label><input id="land_price" type="number" value="374000"></div>
+      <div class="row"><label>&nbsp;&nbsp;Building price</label><input id="bldg_price" type="number" value="365500"></div>
+      <div class="row" style="border-top:1px solid var(--border); padding-top:6px;"><label><strong>Purchase price (land + building)</strong></label><span class="out" id="o_purchase_sum"><strong></strong></span></div>
+      <div class="subrow" style="margin-top:8px;">Purchase costs</div>
+      <div class="row"><label>&nbsp;&nbsp;Conveyancing</label><input id="pc_conv" type="number" value="1250"></div>
+      <div class="row"><label>&nbsp;&nbsp;Stamp duty (on land)</label><input id="pc_stamp" type="number" value="17510"></div>
+      <div class="row"><label>&nbsp;&nbsp;Transfer of title</label><input id="pc_transfer" type="number" value="978"></div>
+      <div class="row"><label>&nbsp;&nbsp;Other costs</label><input id="pc_other" type="number" value="1100"></div>
+      <div class="subrow">Loan costs</div>
+      <div class="row"><label>&nbsp;&nbsp;Valuation fees</label><input id="lc_val" type="number" value="300"></div>
+      <div class="row"><label>&nbsp;&nbsp;Registration 1st mortgage</label><input id="lc_reg1" type="number" value="181"></div>
+      <div class="row"><label>&nbsp;&nbsp;Registration 2nd mortgage</label><input id="lc_reg2" type="number" value="181"></div>
+      <div class="row"><label>&nbsp;&nbsp;Search fees</label><input id="lc_search" type="number" value="200"></div>
+    </div>
+
+    <div class="card">
+      <h2>Post-Handover Costs</h2>
+      <div class="legend" style="margin-bottom:6px;">Items you complete after builder handover (non-turnkey scenario).
+        Funding: <em>Financed</em> = added to building value, bank lends the deposit-adjusted portion.
+        <em>Out-of-pocket</em> = 100% cash from your pocket.</div>
+      <table id="ph_table">
+        <thead>
+          <tr><th style="text-align:left;">Item</th><th>Amount</th><th>Funding</th><th></th></tr>
+        </thead>
+        <tbody id="ph_body"></tbody>
+      </table>
+      <button id="ph_add" type="button" class="btn">+ Add item</button>
+      <div class="row" style="border-top:1px solid var(--border); padding-top:6px; margin-top:8px;">
+        <label><strong>Post-handover total</strong></label><span class="out" id="o_ph_total"><strong></strong></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Finance</h2>
+      <div class="row"><label>Deposit on property <span class="unit">%</span></label><input id="deposit_pct" type="number" step="0.1" value="10"></div>
+      <div class="row"><label>Interest rate <span class="unit">% p.a.</span></label><input id="rate" type="number" step="0.01" value="6.15"></div>
+      <div class="row"><label>Loan type</label>
+        <select id="loantype">
+          <option value="IO">Interest Only</option>
+          <option value="PI">Principal &amp; Interest</option>
+        </select>
+      </div>
+      <div class="row"><label>Loan term <span class="unit">yrs</span></label><input id="term" type="number" value="30"></div>
+      <div class="row"><label>Loan cost write-off <span class="unit">yrs</span></label><input id="wo_years" type="number" value="5"></div>
+    </div>
+
+    <div class="card">
+      <h2>Rental Income</h2>
+      <div class="row"><label>Rent per week</label><input id="rent_week" type="number" value="525"></div>
+      <div class="row"><label>Vacancy rate <span class="unit">%</span></label><input id="vacancy" type="number" step="0.1" value="2"></div>
+    </div>
+
+    <div class="card">
+      <h2>Rental Expenses (Year 1)</h2>
+      <div class="row"><label>Agent's commission <span class="unit">% of rent</span></label><input id="agent_pct" type="number" step="0.01" value="5.5"></div>
+      <div class="row"><label>Letting fees</label><input id="letting" type="number" value="545"></div>
+      <div class="row"><label>Rates</label><input id="rates" type="number" value="2100"></div>
+      <div class="row"><label>Insurance</label><input id="insurance" type="number" value="1300"></div>
+      <div class="row"><label>Maintenance</label><input id="maint" type="number" value="1000"></div>
+      <div class="row"><label>Body corporate</label><input id="body" type="number" value="1100"></div>
+      <div class="row"><label>Special expenses</label><input id="special" type="number" value="0"></div>
+    </div>
+
+    <div class="card">
+      <h2>Depreciation</h2>
+      <div class="row"><label>Building depreciable amount</label><input id="bldg_val" type="number" value="365500"></div>
+      <div class="row"><label>Building depr rate <span class="unit">%</span></label><input id="bldg_rate" type="number" step="0.01" value="2.5"></div>
+      <div class="row"><label>Fittings value</label><input id="fit_val" type="number" value="38500"></div>
+      <div class="row"><label>Fittings effective life <span class="unit">yrs</span></label><input id="fit_life" type="number" step="0.1" value="5.5"></div>
+      <div class="legend">Diminishing value @ 200% / life. Residual written off at end of effective life (floor).</div>
+    </div>
+
+    <div class="card">
+      <h2>Owners &amp; Tax</h2>
+      <div class="legend" style="margin-bottom:6px;">Add as many owners as you like. Ownership % should total 100. Salary growth compounds each year for projections.</div>
+      <table id="owners_table">
+        <thead>
+          <tr><th style="text-align:left;">Name</th><th>Share %</th><th>Income</th><th>Salary&nbsp;growth&nbsp;%</th><th></th></tr>
+        </thead>
+        <tbody id="owners_body"></tbody>
+      </table>
+      <button id="own_add" type="button" class="btn">+ Add owner</button>
+      <div class="row" style="border-top:1px solid var(--border); padding-top:6px; margin-top:8px;">
+        <label><strong>Total ownership</strong></label><span class="out" id="o_own_total"><strong></strong></span>
+      </div>
+      <div class="row"><label>Tax brackets</label>
+        <select id="brackets">
+          <option value="2019-20" selected>AU 2019-20 (matches PDF)</option>
+          <option value="2024-25">AU 2024-25 (Stage 3)</option>
+        </select>
+      </div>
+      <div class="row"><label>Medicare levy <span class="unit">%</span></label><input id="medicare" type="number" step="0.1" value="2"></div>
+    </div>
+
+    <div class="card">
+      <h2>Projection Growth</h2>
+      <div class="row"><label>Rental income growth <span class="unit">% p.a.</span></label><input id="growRent" type="number" step="0.01" value="3.75"></div>
+      <div class="row"><label>Rental expenses growth <span class="unit">% p.a.</span></label><input id="growExp" type="number" step="0.01" value="3.75"></div>
+      <div class="row"><label>Projection years</label><input id="years" type="number" value="25"></div>
+    </div>
+
+    <div class="legend"><span class="sq"></span>Yellow fields = you enter these &nbsp; · &nbsp; Everything else is derived.</div>
+  </section>
+
+  <!-- ============ OUTPUTS ============ -->
+  <section id="outputs">
+
+    <div class="card">
+      <h2>Headline (Year 1)</h2>
+      <div class="grid2">
+        <div>
+          <div class="kbd">Pre-tax cash flow</div>
+          <div class="big" id="o_preTax">—</div>
+        </div>
+        <div>
+          <div class="kbd">Annual after-tax investment</div>
+          <div class="big" id="o_afterTaxAnnual">—</div>
+          <div class="kbd">Weekly: <span id="o_afterTaxWeekly">—</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Investment Cost</h2>
+        <div class="row"><label>Purchase price</label><span class="out" id="o_price"></span></div>
+        <div class="row"><label>Purchase costs</label><span class="out" id="o_pc"></span></div>
+        <div class="row"><label>Loan costs</label><span class="out" id="o_lc"></span></div>
+        <div class="row"><label>Post-handover costs</label><span class="out" id="o_ph"></span></div>
+        <div class="row" style="border-top:1px solid var(--border); padding-top:6px;"><label><strong>Total investment cost</strong></label><span class="out" id="o_total"><strong></strong></span></div>
+        <details>
+          <summary>Cash vs Loan split</summary>
+          <table style="margin-top:6px;">
+            <thead><tr><th></th><th>Cash</th><th>Loan</th><th>Total</th></tr></thead>
+            <tbody>
+              <tr><td>Property (land + building)</td><td id="s_prop_c"></td><td id="s_prop_l"></td><td id="s_prop_t"></td></tr>
+              <tr><td>Post-handover (financed)</td><td id="s_phb_c"></td><td id="s_phb_l"></td><td id="s_phb_t"></td></tr>
+              <tr><td>Post-handover (out-of-pocket)</td><td id="s_phc_c"></td><td>0</td><td id="s_phc_t"></td></tr>
+              <tr><td>Purchase costs</td><td id="s_pc_c"></td><td>0</td><td id="s_pc_t"></td></tr>
+              <tr><td>Loan costs</td><td>0</td><td id="s_lc_l"></td><td id="s_lc_t"></td></tr>
+              <tr class="hi"><td>Totals</td><td id="s_tot_c"></td><td id="s_tot_l"></td><td id="s_tot_t"></td></tr>
+            </tbody>
+          </table>
+        </details>
+      </div>
+
+      <div class="card">
+        <h2>Finance (Year 1)</h2>
+        <div class="row"><label>Initial cash invested</label><span class="out" id="o_cash"></span></div>
+        <div class="row"><label>Initial loan amount</label><span class="out" id="o_loan"></span></div>
+        <div class="row"><label>Interest payments</label><span class="out" id="o_int"></span></div>
+        <div class="row"><label>Principal payments</label><span class="out" id="o_prin"></span></div>
+        <div class="row"><label>Total loan payments</label><span class="out" id="o_totloan"></span></div>
+        <div class="row"><label>Monthly payment</label><span class="out" id="o_monthly"></span></div>
+        <div class="row"><label>Closing loan balance</label><span class="out" id="o_close"></span></div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Rental Income &amp; Expenses (Year 1)</h2>
+        <div class="row"><label>Potential annual rent</label><span class="out" id="o_potRent"></span></div>
+        <div class="row"><label>Annual rent (after vacancy)</label><span class="out" id="o_rent"></span></div>
+        <div class="row"><label>Gross yield</label><span class="out" id="o_grossY"></span></div>
+        <div class="row" style="margin-top:8px;"><label>Agent's commission</label><span class="out" id="o_agent"></span></div>
+        <div class="row"><label>Letting + rates + ins + maint + BC</label><span class="out" id="o_othExp"></span></div>
+        <div class="row"><label>Special expenses</label><span class="out" id="o_specExp"></span></div>
+        <div class="row" style="border-top:1px solid var(--border); padding-top:6px;"><label><strong>Total expenses</strong></label><span class="out" id="o_totExp"><strong></strong></span></div>
+        <div class="row"><label>Net rental income</label><span class="out" id="o_netRent"></span></div>
+        <div class="row"><label>Net yield</label><span class="out" id="o_netY"></span></div>
+      </div>
+
+      <div class="card">
+        <h2>Tax Deductions (Year 1)</h2>
+        <div class="row"><label>Loan interest</label><span class="out" id="o_d_int"></span></div>
+        <div class="row"><label>Rental expenses</label><span class="out" id="o_d_exp"></span></div>
+        <div class="row"><label>Building depreciation</label><span class="out" id="o_d_bldg"></span></div>
+        <div class="row"><label>Fittings depreciation</label><span class="out" id="o_d_fit"></span></div>
+        <div class="row"><label>Loan cost write-off</label><span class="out" id="o_d_wo"></span></div>
+        <div class="row" style="border-top:1px solid var(--border); padding-top:6px;"><label><strong>Total tax deductions</strong></label><span class="out" id="o_d_tot"><strong></strong></span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Tax Credit Calculation (Year 1)</h2>
+      <div id="tax_table_wrap"></div>
+    </div>
+
+    <div class="card">
+      <h2>Cash Flow Projections</h2>
+      <div style="max-height:520px; overflow:auto;">
+        <table id="proj">
+          <thead>
+            <tr>
+              <th>Year</th><th>Rent</th><th>Interest</th><th>Expenses</th>
+              <th>Pre-tax</th><th>Deductions</th><th>Tax credit</th><th>After-tax</th><th>$/week</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Who pays the 1st year cost?</h2>
+      <div class="grid2">
+        <div>
+          <div class="row"><label>Total 1st year cost (interest + expenses)</label><span class="out" id="w_total"></span></div>
+          <div class="row"><label>Tenant (rent)</label><span class="out" id="w_tenant"></span></div>
+          <div class="row"><label>Taxman (tax credit)</label><span class="out" id="w_taxman"></span></div>
+          <div class="row"><label>You (after-tax cost)</label><span class="out" id="w_you"></span></div>
+        </div>
+        <div>
+          <div class="row"><label>Tenant share</label><span class="out" id="w_tenantP"></span></div>
+          <div class="row"><label>Taxman share</label><span class="out" id="w_taxmanP"></span></div>
+          <div class="row"><label>Your share</label><span class="out" id="w_youP"></span></div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+</main>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const num = (id) => parseFloat($(id).value) || 0;
+  const fmt = (n, dp=0) => (n<0?'-':'') + '$' + Math.abs(Math.round(n*Math.pow(10,dp))/Math.pow(10,dp)).toLocaleString(undefined,{minimumFractionDigits:dp,maximumFractionDigits:dp});
+  const pct = (n) => (n*100).toFixed(2) + '%';
+  const setTxt = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+  const setMoney = (id, v, dp=0) => {
+    const el = $(id); if (!el) return;
+    el.textContent = fmt(v, dp);
+    el.classList.remove('pos','neg');
+    if (v < 0) el.classList.add('neg');
+  };
+
+  // ---- Tax brackets ----
+  function tax(income, bracketSet) {
+    if (income <= 0) return 0;
+    let base = 0;
+    if (bracketSet === '2024-25') {
+      // AU resident rates from 1 Jul 2024 (Stage 3)
+      if (income <= 18200) base = 0;
+      else if (income <= 45000) base = (income - 18200) * 0.16;
+      else if (income <= 135000) base = 4288 + (income - 45000) * 0.30;
+      else if (income <= 190000) base = 31288 + (income - 135000) * 0.37;
+      else base = 51638 + (income - 190000) * 0.45;
+    } else {
+      // AU 2019-20 resident rates (matches PDF)
+      if (income <= 18200) base = 0;
+      else if (income <= 37000) base = (income - 18200) * 0.19;
+      else if (income <= 90000) base = 3572 + (income - 37000) * 0.325;
+      else if (income <= 180000) base = 20797 + (income - 90000) * 0.37;
+      else base = 54097 + (income - 180000) * 0.45;
+    }
+    return base;
+  }
+  function totalTax(income, bracketSet, medicarePct) {
+    return tax(income, bracketSet) + income * (medicarePct/100);
+  }
+
+  // ---- Fittings depreciation schedule ----
+  function fittingsSchedule(value, life, years) {
+    const rate = life > 0 ? (2 / life) : 0; // 200% diminishing value
+    const lastYear = Math.max(1, Math.floor(life)); // residual written off in final year
+    const arr = [];
+    let base = value;
+    for (let y = 1; y <= years; y++) {
+      let d = 0;
+      if (y < lastYear) {
+        d = base * rate;
+      } else if (y === lastYear) {
+        d = base; // write off remaining
+      } else {
+        d = 0;
+      }
+      arr.push(d);
+      base -= d;
+    }
+    return arr;
+  }
+
+  function recalc() {
+    // ---- Inputs ----
+    const landPrice = num('land_price');
+    const bldgPrice = num('bldg_price');
+    const price = landPrice + bldgPrice;
+    setTxt('o_purchase_sum', fmt(price));
+    const pc = num('pc_conv') + num('pc_stamp') + num('pc_transfer') + num('pc_other');
+    const lc = num('lc_val') + num('lc_reg1') + num('lc_reg2') + num('lc_search');
+
+    // ---- Post-handover costs ----
+    let phBuild = 0, phCash = 0;
+    document.querySelectorAll('#ph_body tr').forEach(tr => {
+      const amt = parseFloat(tr.querySelector('.ph_amt').value) || 0;
+      const mode = tr.querySelector('.ph_mode').value;
+      if (mode === 'build') phBuild += amt; else phCash += amt;
+    });
+    const phTotal = phBuild + phCash;
+    setTxt('o_ph_total', fmt(phTotal));
+
+    const depPct = num('deposit_pct') / 100;
+    const rate = num('rate') / 100;
+    const loanType = $('loantype').value;
+    const term = num('term');
+    const woYears = Math.max(1, num('wo_years'));
+
+    // Cash / Loan split (mirrors PDF logic; phBuild rolls into property value, phCash is 100% out-of-pocket)
+    const propertyCash = price * depPct;
+    const propertyLoan = price - propertyCash;
+    const phBuildCash = phBuild * depPct;
+    const phBuildLoan = phBuild - phBuildCash;
+    const cashInvested = propertyCash + pc + phBuildCash + phCash;
+    const initialLoan = propertyLoan + lc + phBuildLoan;
+    const totalCost = price + pc + lc + phTotal;
+
+    // Year 1 loan payments
+    const interestY1 = initialLoan * rate;
+    let principalY1 = 0;
+    let annualPayment = interestY1;
+    if (loanType === 'PI' && term > 0 && rate > 0) {
+      const r = rate / 12;
+      const n = term * 12;
+      const monthly = initialLoan * r / (1 - Math.pow(1 + r, -n));
+      annualPayment = monthly * 12;
+      principalY1 = annualPayment - interestY1;
+    }
+    const closingLoan = initialLoan - principalY1;
+
+    // ---- Rental income / expenses ----
+    const rentWeek = num('rent_week');
+    const vacancy = num('vacancy') / 100;
+    const potRent = rentWeek * 52;
+    const annualRent = potRent * (1 - vacancy);
+    const agentPct = num('agent_pct') / 100;
+    const agentFee = annualRent * agentPct;
+    const othExp = num('letting') + num('rates') + num('insurance') + num('maint') + num('body');
+    const specExp = num('special');
+    const totalExp = agentFee + othExp + specExp;
+    const netRent = annualRent - totalExp;
+    const grossYield = price > 0 ? annualRent / price : 0;
+    const netYield = price > 0 ? netRent / price : 0;
+
+    // ---- Pre-tax cash flow ----
+    const preTax = netRent - interestY1 - principalY1;
+
+    // ---- Depreciation ----
+    const bldgDepr = num('bldg_val') * (num('bldg_rate') / 100);
+    const fitVal = num('fit_val');
+    const fitLife = num('fit_life');
+    const years = Math.max(1, num('years'));
+    const fitSchedule = fittingsSchedule(fitVal, fitLife, years);
+    const loanWoY1 = lc / woYears;
+
+    const totalDeductY1 = interestY1 + totalExp + bldgDepr + fitSchedule[0] + loanWoY1;
+
+    // ---- Tax credit calc ----
+    const brackets = $('brackets').value;
+    const medicare = num('medicare');
+    const owners = [];
+    document.querySelectorAll('#owners_body tr').forEach(tr => {
+      owners.push({
+        name: (tr.querySelector('.o_name').value || 'Owner').trim(),
+        share: (parseFloat(tr.querySelector('.o_share').value) || 0) / 100,
+        income: parseFloat(tr.querySelector('.o_inc').value) || 0,
+        growth: (parseFloat(tr.querySelector('.o_grow').value) || 0) / 100,
+      });
+    });
+    const totalShare = owners.reduce((s, o) => s + o.share, 0);
+    setTxt('o_own_total', (totalShare * 100).toFixed(2) + '%');
+    $('o_own_total').style.color = Math.abs(totalShare - 1) < 1e-9 ? 'var(--green)' : 'var(--red)';
+
+    function computeParty(owner, rentTotal, deductTotal, incomeOverride) {
+      const inc = incomeOverride !== undefined ? incomeOverride : owner.income;
+      const rentShare = rentTotal * owner.share;
+      const dedShare = deductTotal * owner.share;
+      const totInc = inc + rentShare;
+      const newInc = totInc - dedShare;
+      const cTax = totalTax(inc, brackets, medicare);
+      const nTax = totalTax(Math.max(0, newInc), brackets, medicare);
+      return { rentShare, dedShare, totInc, newInc, cTax, nTax, savings: cTax - nTax };
+    }
+    const partyY1 = owners.map(o => computeParty(o, annualRent, totalDeductY1));
+    const totalCredit = partyY1.reduce((s, p) => s + p.savings, 0);
+
+    // ---- Headline ----
+    const afterTaxAnnual = preTax + totalCredit;
+    const afterTaxWeekly = afterTaxAnnual / 52;
+
+    // ==== Render ====
+    setMoney('o_preTax', preTax);
+    setMoney('o_afterTaxAnnual', afterTaxAnnual);
+    setTxt('o_afterTaxWeekly', fmt(afterTaxWeekly, 0) + '/wk');
+
+    setMoney('o_price', price);
+    setMoney('o_pc', pc);
+    setMoney('o_lc', lc);
+    setMoney('o_ph', phTotal);
+    setMoney('o_total', totalCost);
+
+    // split table
+    setTxt('s_prop_c', fmt(propertyCash));
+    setTxt('s_prop_l', fmt(propertyLoan));
+    setTxt('s_prop_t', fmt(price));
+    setTxt('s_phb_c', fmt(phBuildCash));
+    setTxt('s_phb_l', fmt(phBuildLoan));
+    setTxt('s_phb_t', fmt(phBuild));
+    setTxt('s_phc_c', fmt(phCash));
+    setTxt('s_phc_t', fmt(phCash));
+    setTxt('s_pc_c', fmt(pc));
+    setTxt('s_pc_t', fmt(pc));
+    setTxt('s_lc_l', fmt(lc));
+    setTxt('s_lc_t', fmt(lc));
+    setTxt('s_tot_c', fmt(cashInvested));
+    setTxt('s_tot_l', fmt(initialLoan));
+    setTxt('s_tot_t', fmt(totalCost));
+
+    setMoney('o_cash', cashInvested);
+    setMoney('o_loan', initialLoan);
+    setMoney('o_int', interestY1);
+    setMoney('o_prin', principalY1);
+    setMoney('o_totloan', annualPayment);
+    setMoney('o_monthly', annualPayment / 12);
+    setMoney('o_close', closingLoan);
+
+    setMoney('o_potRent', potRent);
+    setMoney('o_rent', annualRent);
+    setTxt('o_grossY', pct(grossYield));
+    setMoney('o_agent', agentFee);
+    setMoney('o_othExp', othExp);
+    setMoney('o_specExp', specExp);
+    setMoney('o_totExp', totalExp);
+    setMoney('o_netRent', netRent);
+    setTxt('o_netY', pct(netYield));
+
+    setMoney('o_d_int', interestY1);
+    setMoney('o_d_exp', totalExp);
+    setMoney('o_d_bldg', bldgDepr);
+    setMoney('o_d_fit', fitSchedule[0]);
+    setMoney('o_d_wo', loanWoY1);
+    setMoney('o_d_tot', totalDeductY1);
+
+    // tax table (dynamic columns per owner + Total)
+    const tt = document.createElement('table');
+    const rows = [
+      ['Ownership',            o => (o.share*100).toFixed(2)+'%',                    () => (totalShare*100).toFixed(2)+'%'],
+      ['Current taxable income', (o,i) => fmt(o.income),                             () => fmt(owners.reduce((s,o)=>s+o.income,0))],
+      ['Rental income share',  (o,i) => fmt(partyY1[i].rentShare),                   () => fmt(annualRent)],
+      ['Total income',         (o,i) => fmt(partyY1[i].totInc),                      () => fmt(partyY1.reduce((s,p)=>s+p.totInc,0))],
+      ['Deductions claimed',   (o,i) => fmt(partyY1[i].dedShare),                    () => fmt(totalDeductY1)],
+      ['New taxable income',   (o,i) => fmt(partyY1[i].newInc),                      () => fmt(partyY1.reduce((s,p)=>s+p.newInc,0))],
+      ['Current tax',          (o,i) => fmt(partyY1[i].cTax),                        () => fmt(partyY1.reduce((s,p)=>s+p.cTax,0))],
+      ['New tax',              (o,i) => fmt(partyY1[i].nTax),                        () => fmt(partyY1.reduce((s,p)=>s+p.nTax,0))],
+      ['Tax credit (savings)', (o,i) => fmt(partyY1[i].savings),                     () => fmt(totalCredit), true],
+    ];
+    let thead = '<thead><tr><th></th>' + owners.map(o => `<th>${(o.name||'Owner').replace(/</g,'&lt;')}</th>`).join('') + '<th>Total</th></tr></thead>';
+    let tbodyHtml = '<tbody>';
+    rows.forEach(r => {
+      const [label, cellFn, totalFn, hi] = r;
+      tbodyHtml += `<tr${hi?' class="hi"':''}><td>${label}</td>`;
+      owners.forEach((o, i) => { tbodyHtml += `<td>${cellFn(o, i)}</td>`; });
+      tbodyHtml += `<td>${totalFn()}</td></tr>`;
+    });
+    tbodyHtml += '</tbody>';
+    tt.innerHTML = thead + tbodyHtml;
+    const wrap = $('tax_table_wrap');
+    wrap.innerHTML = '';
+    wrap.appendChild(tt);
+
+    // ---- Projections ----
+    const growR = num('growRent') / 100;
+    const growE = num('growExp') / 100;
+    const tbody = $('proj').querySelector('tbody');
+    tbody.innerHTML = '';
+    for (let y = 1; y <= years; y++) {
+      const rentY = annualRent * Math.pow(1 + growR, y - 1);
+      const expY = totalExp * Math.pow(1 + growE, y - 1);
+      const netY_ = rentY - expY;
+      // I/O assumption: interest constant while y <= term (approx PDF: interest stays same for 25 years).
+      let intY = interestY1, prinY = principalY1, annPayY = annualPayment;
+      if (loanType === 'PI') {
+        // Constant annuity, interest declines. Approximate with schedule from initialLoan.
+        const r = rate/12, n = term*12;
+        const monthly = initialLoan * r / (1 - Math.pow(1+r,-n));
+        // Balance after (y-1) years
+        let balPrev = initialLoan;
+        if (r > 0) balPrev = initialLoan * Math.pow(1+r, (y-1)*12) - monthly * (Math.pow(1+r,(y-1)*12) - 1)/r;
+        balPrev = Math.max(0, balPrev);
+        let balEnd = initialLoan;
+        if (r > 0) balEnd = initialLoan * Math.pow(1+r, y*12) - monthly * (Math.pow(1+r,y*12) - 1)/r;
+        balEnd = Math.max(0, balEnd);
+        annPayY = Math.min(monthly*12, balPrev + balPrev*rate);
+        intY = balPrev * rate;
+        prinY = Math.max(0, balPrev - balEnd);
+      }
+      const preY = netY_ - intY - prinY;
+      const woY = (y <= woYears) ? loanWoY1 : 0;
+      const deductY = intY + expY + bldgDepr + fitSchedule[y-1] + woY;
+
+      let creditY = 0;
+      owners.forEach(o => {
+        const grownInc = o.income * Math.pow(1 + o.growth, y - 1);
+        creditY += computeParty(o, rentY, deductY, grownInc).savings;
+      });
+      const afterY = preY + creditY;
+      const wk = afterY / 52;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${y}yr</td>
+        <td>${fmt(rentY)}</td>
+        <td>${fmt(intY)}</td>
+        <td>${fmt(expY)}</td>
+        <td class="${preY<0?'neg':'pos'}">${fmt(preY)}</td>
+        <td>${fmt(deductY)}</td>
+        <td>${fmt(creditY)}</td>
+        <td class="${afterY<0?'neg':'pos'}">${fmt(afterY)}</td>
+        <td>${fmt(wk)}</td>`;
+      tbody.appendChild(tr);
+    }
+
+    // ---- Who pays year 1 ----
+    const totalOut = interestY1 + totalExp + principalY1;
+    const tenant = annualRent;
+    const you = -afterTaxAnnual; // cost to you is negative of after-tax cash flow
+    const taxman = totalCredit;
+    setMoney('w_total', totalOut);
+    setMoney('w_tenant', tenant);
+    setMoney('w_taxman', taxman);
+    setMoney('w_you', you);
+    const denom = totalOut || 1;
+    setTxt('w_tenantP', (tenant/denom*100).toFixed(1) + '%');
+    setTxt('w_taxmanP', (taxman/denom*100).toFixed(1) + '%');
+    setTxt('w_youP', (you/denom*100).toFixed(1) + '%');
+  }
+
+  // ---- Post-handover dynamic rows ----
+  const phBody = $('ph_body');
+  function addPhRow(desc = '', amt = 0, mode = 'cash') {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" class="ph_desc" value="${desc.replace(/"/g,'&quot;')}" placeholder="Description"></td>
+      <td><input type="number" class="ph_amt" value="${amt}" min="0"></td>
+      <td>
+        <select class="ph_mode">
+          <option value="cash" ${mode==='cash'?'selected':''}>Out-of-pocket</option>
+          <option value="build" ${mode==='build'?'selected':''}>Financed</option>
+        </select>
+      </td>
+      <td><button type="button" class="btn-x" title="Remove">&times;</button></td>`;
+    phBody.appendChild(tr);
+    tr.querySelector('.btn-x').addEventListener('click', () => { tr.remove(); recalc(); });
+    tr.querySelectorAll('input, select').forEach(el => {
+      el.addEventListener('input', recalc);
+      el.addEventListener('change', recalc);
+    });
+  }
+  ['Landscaping','Driveway','Fencing'].forEach(d => addPhRow(d, 0, 'cash'));
+  $('ph_add').addEventListener('click', () => { addPhRow('', 0, 'cash'); recalc(); });
+
+  // ---- Owners dynamic rows ----
+  const ownersBody = $('owners_body');
+  function addOwnerRow(name = '', share = 0, income = 0, growth = 3) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" class="o_name" value="${name.replace(/"/g,'&quot;')}" placeholder="Name"></td>
+      <td><input type="number" class="o_share" value="${share}" step="0.1" min="0"></td>
+      <td><input type="number" class="o_inc" value="${income}" min="0"></td>
+      <td><input type="number" class="o_grow" value="${growth}" step="0.1"></td>
+      <td><button type="button" class="btn-x" title="Remove">&times;</button></td>`;
+    ownersBody.appendChild(tr);
+    tr.querySelector('.btn-x').addEventListener('click', () => { tr.remove(); recalc(); });
+    tr.querySelectorAll('input').forEach(el => {
+      el.addEventListener('input', recalc);
+      el.addEventListener('change', recalc);
+    });
+  }
+  addOwnerRow('Investor', 50, 100000, 3);
+  addOwnerRow('Partner',  50, 72500,  3);
+  $('own_add').addEventListener('click', () => { addOwnerRow('Owner', 0, 0, 3); recalc(); });
+
+  // Bind
+  document.querySelectorAll('#inputs > .card input, #inputs > .card select').forEach(el => {
+    if (el.closest('#ph_body') || el.closest('#owners_body')) return; // handled per-row above
+    el.addEventListener('input', recalc);
+    el.addEventListener('change', recalc);
+  });
+  recalc();
+})();
+</script>
+</body>
+</html>
